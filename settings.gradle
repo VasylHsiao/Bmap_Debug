@@ -1,0 +1,2 @@
+rootProject.name='Bmap_Debug1'
+include ':app'
