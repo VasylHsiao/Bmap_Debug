@@ -4,6 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
@@ -39,10 +44,16 @@ import com.baidu.mapapi.search.poi.PoiDetailSearchResult;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
 import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
 import com.baidu.mapapi.search.poi.PoiResult;
+import com.baidu.navisdk.adapter.BNRoutePlanNode;
+import com.baidu.navisdk.adapter.BNaviCommonParams;
+import com.baidu.navisdk.adapter.BaiduNaviManagerFactory;
+import com.baidu.navisdk.adapter.IBNRoutePlanManager;
+import com.baidu.navisdk.adapter.IBaiduNaviManager;
 import com.example.bmap_debug1.service.LocationService;
 import com.example.bmap_debug1.service.PoiOverlay;
 import com.example.bmap_debug1.service.PoiSearchService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
@@ -60,7 +71,8 @@ public class MainActivity extends Activity {
     private RelativeLayout mPoiDetailView;
     private TextView mPoiResult;
     private List<PoiInfo> mAllPoi;
-    private LatLng ll;//地理信息数据结构，初始值为当前地址，用于定时时更新地图（中心、范围标记）以及检索时充当检索中心点
+    private LatLng ll;//地理信息数据结构，初始值为当前地址，用于定时时更新地图（中心、范围标记）以及检索时充当检索中心点;点击地图后，更新为所点击的位置，用于指定位置检索以及路径规划和导航
+    private LatLng ll_start;//导航的起点,固定为当前位置
     private int radius;//半径
     private int num = 0;//检索分页数量
     private BitmapDescriptor mbitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka);//点击标记图标，指示用户意向地址
@@ -146,11 +158,14 @@ public class MainActivity extends Activity {
         });
 
         //启动导航
-        startNavigation.setOnClickListener(new View.OnClickListener(){
+        startNavigation.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                startNavi();
+                //初始化导航服务
+                initNavi();
+                //开始算路并唤起导航
+                startPlanAndNavi(ll_start, ll);
             }
         });
 
@@ -189,6 +204,9 @@ public class MainActivity extends Activity {
                 //构造地理坐标数据
                 ll = new LatLng(location.getLatitude(),
                         location.getLongitude());
+
+                ll_start = ll;//设置导航起点
+
                 //（以动画方式）改变地图状态（中心、倍数等）
                 MapStatus.Builder builder = new MapStatus.Builder();
                 builder.target(ll).zoom(17.0f);
@@ -407,14 +425,6 @@ public class MainActivity extends Activity {
         mMap.addOverlay(ooA);//添加标记
     }
 
-    //启动导航组件
-    public void startNavi(){
-        Intent intent_navi = new Intent(this,NaviActivity.class);
-        startActivity(intent_navi);
-        System.out.println("正在启动！！！\n");
-    }
-
-
     public static class KeybordUtil {
         //关闭软键盘
         public static void closeKeybord(Activity activity) {
@@ -424,4 +434,114 @@ public class MainActivity extends Activity {
             }
         }
     }
+
+    //初始化导航服务
+    public void initNavi() {
+        BaiduNaviManagerFactory.getBaiduNaviManager().init(MainActivity.this.getApplicationContext(),
+                Environment.getExternalStorageDirectory().toString(), "PNBmap", new IBaiduNaviManager.INaviInitListener() {
+
+                    @Override
+                    public void onAuthResult(int status, String msg) {
+                        String result;
+                        if (0 == status) {
+                            result = "key校验成功!";
+                        } else {
+                            result = "key校验失败, " + msg;
+                        }
+                        Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void initStart() {
+                        Toast.makeText(MainActivity.this.getApplicationContext(),
+                                "百度导航引擎初始化开始", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void initSuccess() {
+                        Toast.makeText(MainActivity.this.getApplicationContext(),
+                                "百度导航引擎初始化成功", Toast.LENGTH_SHORT).show();
+                        // 初始化tts,选择使用内置TTS
+                        BaiduNaviManagerFactory.getTTSManager().initTTS(getApplicationContext(),
+                                Environment.getExternalStorageDirectory().toString(), "PNBmap", "11213224");
+                    }
+
+                    @Override
+                    public void initFailed(int errCode) {
+                        Toast.makeText(MainActivity.this.getApplicationContext(),
+                                "百度导航引擎初始化失败 " + errCode, Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    }
+
+    //开始进行路径规划，并启动导航组件
+    public void startPlanAndNavi(LatLng start, LatLng end) {
+        Intent intent_navi = new Intent(this, NaviActivity.class);
+        startActivity(intent_navi);
+        System.out.println("正在启动！！！\n");
+
+        //生成始节点和终节点
+        BNRoutePlanNode startNode = new BNRoutePlanNode.Builder()
+                .latitude(start.latitude)
+                .longitude(start.longitude)
+                .coordinateType(BNRoutePlanNode.CoordinateType.BD09LL)
+                .build();
+        BNRoutePlanNode endNode = new BNRoutePlanNode.Builder()
+                .latitude(end.latitude)
+                .longitude(end.longitude)
+                .coordinateType(BNRoutePlanNode.CoordinateType.BD09LL)
+                .build();
+
+        //使用list列表容器盛纳节点
+        List<BNRoutePlanNode> list = new ArrayList<>();list.add(startNode);list.add(endNode);
+
+        //根据指定参数进行路线规划，并自动做好进入导航的准备
+        BaiduNaviManagerFactory.getRoutePlanManager().routeplanToNavi(
+                list,
+                IBNRoutePlanManager.RoutePlanPreference.ROUTE_PLAN_PREFERENCE_DEFAULT,
+                null,
+                new Handler(Looper.getMainLooper()) {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        switch (msg.what) {
+                            case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_START:
+                                Toast.makeText(MainActivity.this.getApplicationContext(),
+                                        "算路开始", Toast.LENGTH_SHORT).show();
+                                break;
+                            case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_SUCCESS:
+                                Toast.makeText(MainActivity.this.getApplicationContext(),
+                                        "算路成功", Toast.LENGTH_SHORT).show();
+                                // 躲避限行消息
+                                Bundle infoBundle = (Bundle) msg.obj;
+                                if (infoBundle != null) {
+                                    String info = infoBundle.getString(
+                                            BNaviCommonParams.BNRouteInfoKey.TRAFFIC_LIMIT_INFO
+                                    );
+                                    Log.d("OnSdkDemo", "info = " + info);
+                                }
+                                break;
+                            case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_FAILED:
+                                Toast.makeText(MainActivity.this.getApplicationContext(),
+                                        "算路失败", Toast.LENGTH_SHORT).show();
+                                break;
+                            case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_TO_NAVI:
+                                Toast.makeText(MainActivity.this.getApplicationContext(),
+                                        "算路成功准备进入导航", Toast.LENGTH_SHORT).show();
+
+                                Intent intent = new Intent(MainActivity.this,
+                                        NaviActivity.class);
+
+                                startActivity(intent);
+                                break;
+                            default:
+                                // nothing
+                                break;
+                        }
+                    }
+                });
+
+
+    }
+
 }
