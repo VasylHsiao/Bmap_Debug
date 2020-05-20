@@ -2,6 +2,7 @@ package com.example.bmap_debug1;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -52,6 +53,7 @@ public class MainActivity extends Activity {
     private TextView LocationResult;
     private Button searchPOI;
     private Button searchNext;
+    private Button startNavigation;
     private int locTimes = 0;//定位次数，用于控制地图更新动作（仅第一次调整中心和比例）
     private PoiSearchService poiSearchService;
     private EditText mEditRadius;//半径输入框
@@ -75,6 +77,7 @@ public class MainActivity extends Activity {
         mEditRadius = (EditText) findViewById(R.id.edit_radius);//半径输入栏
         searchPOI = (Button) findViewById(R.id.search_poi);//检索按钮
         searchNext = (Button) findViewById(R.id.search_next);//下一组按钮
+        startNavigation = (Button) findViewById(R.id.start_navi);
         mMapView = (MapView) findViewById(R.id.bmapView);//地图
         mMap = mMapView.getMap();//获取地图控件对象
         mMap.setMyLocationEnabled(true);//开启定位地图图层
@@ -139,6 +142,15 @@ public class MainActivity extends Activity {
                 searchNearby(radius, num);
                 //检索按钮变为“上一组”
                 searchPOI.setText(getString(R.string.previous));
+            }
+        });
+
+        //启动导航
+        startNavigation.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                startNavi();
             }
         });
 
@@ -393,6 +405,13 @@ public class MainActivity extends Activity {
         MarkerOptions ooA = new MarkerOptions().position(ll).icon(mbitmap);//初始化标记，并设置具体位置
         mMap.clear();//清空地图标记
         mMap.addOverlay(ooA);//添加标记
+    }
+
+    //启动导航组件
+    public void startNavi(){
+        Intent intent_navi = new Intent(this,NaviActivity.class);
+        startActivity(intent_navi);
+        System.out.println("正在启动！！！\n");
     }
 
 

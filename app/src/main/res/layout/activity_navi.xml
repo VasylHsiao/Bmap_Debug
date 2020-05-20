@@ -25,35 +25,6 @@
             android:layout_width="match_parent"
             android:layout_height="30dp"
             android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text="位置/范围:"
-                android:textColor="@color/white"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/edit_radius"
-                android:layout_width="70dp"
-                android:layout_height="30dp"
-                android:layout_weight="0"
-                android:layout_margin="2dp"
-                android:background="#675E5E"
-                android:inputType="number"
-                android:text="1000"
-                android:textColor="@color/black" />
-
-            <Button
-                android:id="@+id/search_poi"
-                android:layout_width="60dp"
-                android:layout_height="30dp"
-                android:layout_margin="2dp"
-                android:background="@drawable/btn_selector"
-                android:text="@string/startsearch"
-                android:textColor="@color/white"
-                android:textSize="@dimen/ui_size" />
-
             <Button
                 android:id="@+id/search_next"
                 android:layout_width="60dp"
@@ -64,7 +35,7 @@
                 android:textColor="@color/white"
                 android:textSize="@dimen/ui_size" />
             <Button
-                android:id="@+id/search_bavi"
+                android:id="@+id/start_navi"
                 android:layout_width="60dp"
                 android:layout_height="30dp"
                 android:layout_margin="2dp"
