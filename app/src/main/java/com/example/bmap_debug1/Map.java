@@ -20,9 +20,7 @@ public class Map extends Application {
         locationService = new LocationService(getApplicationContext());
         mVibrator =(Vibrator)getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);
 
-        //在使用SDK各组件之前初始化context信息，传入ApplicationContext
         SDKInitializer.initialize(getApplicationContext());
-        //包括BD09LL和GCJ02两种坐标，默认是BD09LL坐标。
         SDKInitializer.setCoordType(CoordType.BD09LL);
     }
 }

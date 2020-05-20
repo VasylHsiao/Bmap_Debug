@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.bmap_debug1">
+    <!-- 读sd卡 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- 写sd卡 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_GPS" /> <!-- 获取精确gps位置 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- 获取粗略位置 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- 允许程序访问额外的定位提供者指令获取模拟定位信息 -->
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" /> <!-- 网络链接 -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- 获取网络状态 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- 更改wifi连状态 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" /> <!-- 获取wifi状态 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /> <!-- 后台服务 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 摄像头 -->
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- 录音 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- 导航中省电设置 -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <application
         android:name=".Map"
@@ -10,13 +25,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="eV9v1YhTX6S9mwG8miGDhcufZzELVEZB" />
+
         <service
             android:name="com.baidu.location.f"
             android:enabled="true"
             android:process=":remote" />
+
+        <activity android:name=".NaviActivity"></activity>
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,32 +46,4 @@
         </activity>
     </application>
 
-    <!-- 读sd卡 -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- 写sd卡 -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_GPS" />
-    <!-- 获取精确gps位置 -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- 获取粗略位置 -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- 允许程序访问额外的定位提供者指令获取模拟定位信息 -->
-    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
-    <!-- 网络链接 -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 获取网络状态 -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- 更改wifi连状态 -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <!-- 获取wifi状态 -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- 后台服务 -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- 摄像头 -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 录音 -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!-- 导航中省电设置 -->
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-    <!-- OpenGLES 2.0 -->
 </manifest>
