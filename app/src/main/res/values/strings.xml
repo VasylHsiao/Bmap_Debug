@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">bmap_debug</string>
+    <string name="app_name">停车导航地图</string>
     <string name="startsearch">开始检索</string>
     <string name="stopsearch">停止检索</string>
     <string name="next">下一组</string>

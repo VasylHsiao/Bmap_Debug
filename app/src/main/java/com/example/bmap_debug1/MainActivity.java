@@ -17,10 +17,14 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.Poi;
 import com.baidu.location.PoiRegion;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.CircleOptions;
+import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
@@ -54,15 +58,16 @@ public class MainActivity extends Activity {
     private RelativeLayout mPoiDetailView;
     private TextView mPoiResult;
     private List<PoiInfo> mAllPoi;
-    private LatLng ll;
+    private LatLng ll;//地理信息数据结构，初始值为当前地址，用于定时时更新地图（中心、范围标记）以及检索时充当检索中心点
     private int radius;//半径
     private int num = 0;//检索分页数量
+    private BitmapDescriptor mbitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka);//点击标记图标，指示用户意向地址
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_poinearbysearch);
+        setContentView(R.layout.activity_main);
 //        setContentView(R.layout.main_activity1);//测试新的布局
 
         // -----------demo view config ------------
@@ -78,13 +83,15 @@ public class MainActivity extends Activity {
 
         //获取locationservice实例
         locationService = ((Map) getApplication()).locationService;
-        //注册监听
+        //注册定位监听
         locationService.registerListener(mListener);
         //设置定位参数
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
 
         //创建POI检索实例并注册监听
         poiSearchService = new PoiSearchService(poiListener);
+        //注册地图点击事件的监听响应
+        initClickListener();
     }
 
     @Override
@@ -110,10 +117,10 @@ public class MainActivity extends Activity {
                     //开始检索
                     num = 0;
                     searchNearby(radius, num);
-                } else if(num > 1){
+                } else if (num > 1) {
                     num--;
                     searchNearby(radius, num);
-                }else if(num ==1){
+                } else if (num == 1) {
                     num--;
                     searchNearby(radius, num);
                     searchPOI.setText(getString(R.string.startsearch));
@@ -236,7 +243,7 @@ public class MainActivity extends Activity {
         }
     };
 
-    //    实现POI检索监听
+    //实现POI检索监听
     private OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener() {
         @Override
         public void onGetPoiResult(final PoiResult result) {
@@ -250,24 +257,19 @@ public class MainActivity extends Activity {
             //POI检索结果地图标记形式
             mMap.clear();//清空地图标记
             if (result.error == SearchResult.ERRORNO.NO_ERROR) {
-                sb1.append("\n这里成功啦！！！！！！！！！！\n");
-                System.out.println("正在绘图！！！！！！！！！！！\n");
-                //监听 View 绘制完成后获取view的高度
+                //监听 View 绘制,完成后获取view的高度
                 mPoiDetailView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
+                        // 添加poi标记
+                        PoiOverlay overlay = new MyPoiOverlay(mMap);//传入地图控件管理者引用，初始化自定义标记类
+                        mMap.setOnMarkerClickListener(overlay);//为标记添加点击监听，以处理点击事件
+                        overlay.setData(result);//传入POI数据，设置overlay标记的相关参数
+                        overlay.addToMap();//将所有overlay标记添加到地图上
+                        int PaddingBootom = mPoiDetailView.getMeasuredHeight();//获取 view 的高度
                         int padding = 50;
-                        // 添加poi
-                        PoiOverlay overlay = new MyPoiOverlay(mMap);
-                        mMap.setOnMarkerClickListener(overlay);
-                        overlay.setData(result);
-                        overlay.addToMap();
-                        // 获取 view 的高度
-                        int PaddingBootom = mPoiDetailView.getMeasuredHeight();
-                        // 设置显示在规定宽高中的地图地理范围
-                        overlay.zoomToSpanPaddingBounds(padding, padding, padding, PaddingBootom);
-                        // 加载完后需要移除View的监听，否则会被多次触发
-                        mPoiDetailView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        overlay.zoomToSpanPaddingBounds(padding, padding, padding, PaddingBootom);// 设置显示在规定宽高中的地图地理范围
+                        mPoiDetailView.getViewTreeObserver().removeOnGlobalLayoutListener(this);// 加载完后需要移除View的监听
                         showNearbyArea(ll, radius);//绘制检索范围（圆圈）
                     }
                 });
@@ -354,6 +356,10 @@ public class MainActivity extends Activity {
 
     //对周边检索的范围进行绘制
     public void showNearbyArea(LatLng center, int radius) {
+        //添加检索中心点图标
+        BitmapDescriptor centerBitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_center);
+        MarkerOptions ooMarker = new MarkerOptions().position(center).icon(centerBitmap);
+        mMap.addOverlay(ooMarker);
         OverlayOptions ooCircle = new CircleOptions()
                 .fillColor(0x1033b5e5)
                 .center(center)
@@ -362,8 +368,35 @@ public class MainActivity extends Activity {
         mMap.addOverlay(ooCircle);
     }
 
-    public static class KeybordUtil {
 
+    //添加注册对地图事件的消息响应（单击）
+    private void initClickListener() {
+        mMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+            //单击地图
+            @Override
+            public void onMapClick(LatLng point) {
+                ll = point;
+                updateMapState();
+            }
+
+            //单击地图中的POI点
+            @Override
+            public void onMapPoiClick(MapPoi poi) {
+                ll = poi.getPosition();//读取点击位置信息，将其读取至ll变量中
+                updateMapState();
+            }
+        });
+    }
+
+    //更新地图状态显示标记，读取标记点的位置信息
+    private void updateMapState() {
+        MarkerOptions ooA = new MarkerOptions().position(ll).icon(mbitmap);//初始化标记，并设置具体位置
+        mMap.clear();//清空地图标记
+        mMap.addOverlay(ooA);//添加标记
+    }
+
+
+    public static class KeybordUtil {
         //关闭软键盘
         public static void closeKeybord(Activity activity) {
             InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
