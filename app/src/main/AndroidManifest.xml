@@ -35,7 +35,8 @@
             android:enabled="true"
             android:process=":remote" />
 
-        <activity android:name=".NaviActivity"></activity>
+        <activity android:name=".NaviActivity">
+        </activity>
 
         <activity android:name=".MainActivity">
             <intent-filter>
