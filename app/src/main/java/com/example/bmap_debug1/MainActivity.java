@@ -53,6 +53,7 @@ import com.example.bmap_debug1.service.LocationService;
 import com.example.bmap_debug1.service.PoiOverlay;
 import com.example.bmap_debug1.service.PoiSearchService;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +77,8 @@ public class MainActivity extends Activity {
     private int radius;//半径
     private int num = 0;//检索分页数量
     private BitmapDescriptor mbitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka);//点击标记图标，指示用户意向地址
+    private String SDPath = null;//导航服务所需要的SD卡根目录路径
+    private static final String APP_NAME = "PNBmap";//导航服务所需要的app所对应的目录
 
 
     @Override
@@ -107,6 +110,11 @@ public class MainActivity extends Activity {
         poiSearchService = new PoiSearchService(poiListener);
         //注册地图点击事件的监听响应
         initClickListener();
+
+        //初始化导航服务
+        if (initDir()) {
+            initNavi();
+        }
     }
 
     @Override
@@ -162,8 +170,6 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                //初始化导航服务
-                initNavi();
                 //开始算路并唤起导航
                 startPlanAndNavi(ll_start, ll);
             }
@@ -437,8 +443,9 @@ public class MainActivity extends Activity {
 
     //初始化导航服务
     public void initNavi() {
+        //初始化导航服务
         BaiduNaviManagerFactory.getBaiduNaviManager().init(MainActivity.this.getApplicationContext(),
-                Environment.getExternalStorageDirectory().toString(), "PNBmap", new IBaiduNaviManager.INaviInitListener() {
+                SDPath, APP_NAME, new IBaiduNaviManager.INaviInitListener() {
 
                     @Override
                     public void onAuthResult(int status, String msg) {
@@ -472,14 +479,10 @@ public class MainActivity extends Activity {
                                 "百度导航引擎初始化失败 " + errCode, Toast.LENGTH_SHORT).show();
                     }
                 });
-
     }
 
     //开始进行路径规划，并启动导航组件
     public void startPlanAndNavi(LatLng start, LatLng end) {
-        Intent intent_navi = new Intent(this, NaviActivity.class);
-        startActivity(intent_navi);
-        System.out.println("正在启动！！！\n");
 
         //生成始节点和终节点
         BNRoutePlanNode startNode = new BNRoutePlanNode.Builder()
@@ -494,7 +497,9 @@ public class MainActivity extends Activity {
                 .build();
 
         //使用list列表容器盛纳节点
-        List<BNRoutePlanNode> list = new ArrayList<>();list.add(startNode);list.add(endNode);
+        List<BNRoutePlanNode> list = new ArrayList<>();
+        list.add(startNode);
+        list.add(endNode);
 
         //根据指定参数进行路线规划，并自动做好进入导航的准备
         BaiduNaviManagerFactory.getRoutePlanManager().routeplanToNavi(
@@ -507,11 +512,11 @@ public class MainActivity extends Activity {
                         switch (msg.what) {
                             case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_START:
                                 Toast.makeText(MainActivity.this.getApplicationContext(),
-                                        "算路开始", Toast.LENGTH_SHORT).show();
+                                        "开始规划路径", Toast.LENGTH_SHORT).show();
                                 break;
                             case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_SUCCESS:
                                 Toast.makeText(MainActivity.this.getApplicationContext(),
-                                        "算路成功", Toast.LENGTH_SHORT).show();
+                                        "路径规划成功", Toast.LENGTH_SHORT).show();
                                 // 躲避限行消息
                                 Bundle infoBundle = (Bundle) msg.obj;
                                 if (infoBundle != null) {
@@ -523,11 +528,11 @@ public class MainActivity extends Activity {
                                 break;
                             case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_FAILED:
                                 Toast.makeText(MainActivity.this.getApplicationContext(),
-                                        "算路失败", Toast.LENGTH_SHORT).show();
+                                        "路径规划失败", Toast.LENGTH_SHORT).show();
                                 break;
                             case IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_TO_NAVI:
                                 Toast.makeText(MainActivity.this.getApplicationContext(),
-                                        "算路成功准备进入导航", Toast.LENGTH_SHORT).show();
+                                        "准备进入导航界面", Toast.LENGTH_SHORT).show();
 
                                 Intent intent = new Intent(MainActivity.this,
                                         NaviActivity.class);
@@ -542,6 +547,27 @@ public class MainActivity extends Activity {
                 });
 
 
+    }
+
+    //读取SD根目录路径，并创建app对应的文件夹
+    private boolean initDir() {
+        if (Environment.getExternalStorageState().equalsIgnoreCase(Environment.MEDIA_MOUNTED)) {
+            SDPath = Environment.getExternalStorageDirectory().toString();//读取根目录路径
+        } else {
+            return false;//若为空，说明读取失败，返回false
+        }
+
+        //创建app所对应的文件夹
+        File f = new File(SDPath, APP_NAME);
+        if (!f.exists()) {
+            try {
+                f.mkdir();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
     }
 
 }
