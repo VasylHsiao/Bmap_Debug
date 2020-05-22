@@ -1,5 +1,6 @@
 package com.example.bmap_debug1;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -79,6 +80,10 @@ public class MainActivity extends Activity {
     private BitmapDescriptor mbitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka);//点击标记图标，指示用户意向地址
     private String SDPath = null;//导航服务所需要的SD卡根目录路径
     private static final String APP_NAME = "PNBmap";//导航服务所需要的app所对应的目录
+    private static final String[] authBaseArr = {
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION
+    };
 
 
     @Override
@@ -110,6 +115,7 @@ public class MainActivity extends Activity {
         poiSearchService = new PoiSearchService(poiListener);
         //注册地图点击事件的监听响应
         initClickListener();
+
 
         //初始化导航服务
         if (initDir()) {
@@ -193,7 +199,6 @@ public class MainActivity extends Activity {
         super.onStop();
     }
 
-
     //实现定位监听
     private BDAbstractLocationListener mListener = new BDAbstractLocationListener() {
 
@@ -274,8 +279,6 @@ public class MainActivity extends Activity {
                 sb.append("\nSDK版本: ");
             }
 
-            //更新textview
-//            updateMap(LocationResult, sb.toString());
         }
     };
 
@@ -545,12 +548,11 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
-
-
     }
 
     //读取SD根目录路径，并创建app对应的文件夹
     private boolean initDir() {
+
         if (Environment.getExternalStorageState().equalsIgnoreCase(Environment.MEDIA_MOUNTED)) {
             SDPath = Environment.getExternalStorageDirectory().toString();//读取根目录路径
         } else {
@@ -558,14 +560,23 @@ public class MainActivity extends Activity {
         }
 
         //创建app所对应的文件夹
+        System.out.println("读取路径！！！！！！！！\n");
+        System.out.println(SDPath);
         File f = new File(SDPath, APP_NAME);
         if (!f.exists()) {
             try {
-                f.mkdir();
+                System.out.println(f.getAbsolutePath());
+                if (f.mkdir()) {
+                    System.out.println("创建成功！\n");
+                    System.out.println(f.getAbsolutePath());
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
+        } else {
+            System.out.println("文件已存在！！\n");
         }
         return true;
     }
