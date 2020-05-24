@@ -458,7 +458,7 @@ public class MainActivity extends Activity {
                         } else {
                             result = "key校验失败, " + msg;
                         }
-                        Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this.getApplicationContext(), result, Toast.LENGTH_LONG).show();
                     }
 
                     @Override
@@ -472,8 +472,9 @@ public class MainActivity extends Activity {
                         Toast.makeText(MainActivity.this.getApplicationContext(),
                                 "百度导航引擎初始化成功", Toast.LENGTH_SHORT).show();
                         // 初始化tts,选择使用内置TTS
-                        BaiduNaviManagerFactory.getTTSManager().initTTS(getApplicationContext(),
-                                Environment.getExternalStorageDirectory().toString(), "PNBmap", "11213224");
+                        BaiduNaviManagerFactory.getTTSManager().initTTS(MainActivity.this.getApplicationContext(),
+                                SDPath, APP_NAME, "19886703");
+                        System.out.println("TTS初始化成功！！！\n\n\n");
                     }
 
                     @Override
@@ -560,8 +561,8 @@ public class MainActivity extends Activity {
         }
 
         //创建app所对应的文件夹
-        System.out.println("读取路径！！！！！！！！\n");
-        System.out.println(SDPath);
+//        System.out.println("读取路径！！！！！！！！\n");
+//        System.out.println(SDPath);
         File f = new File(SDPath, APP_NAME);
         if (!f.exists()) {
             try {
