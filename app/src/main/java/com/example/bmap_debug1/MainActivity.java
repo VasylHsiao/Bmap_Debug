@@ -422,13 +422,14 @@ public class MainActivity extends Activity {
             @Override
             public void onMapPoiClick(MapPoi poi) {
                 ll = poi.getPosition();//读取点击位置信息，将其读取至ll变量中
-                updateMapState();
+                updateMapState();//读取标记点的位置信息,添加标记
             }
         });
     }
 
     //更新地图状态显示标记，读取标记点的位置信息
     private void updateMapState() {
+        searchPOI.setText(getString(R.string.startsearch));//重置检索按钮
         MarkerOptions ooA = new MarkerOptions().position(ll).icon(mbitmap);//初始化标记，并设置具体位置
         mMap.clear();//清空地图标记
         mMap.addOverlay(ooA);//添加标记
