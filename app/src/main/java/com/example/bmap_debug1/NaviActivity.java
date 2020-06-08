@@ -215,7 +215,7 @@ public class NaviActivity extends Activity {
                 @Override
                 public void onNaviGuideEnd() {
                     // 退出导航
-//                    finish();
+                    finish();
                 }
 
                 @Override
